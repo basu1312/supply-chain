@@ -1,16 +1,15 @@
 import apiClient from '../lib/axios'
-import { ApiResponse } from '../types'
 
 export const login = async (email: string, password: string) => {
-  const resp = await apiClient.post<ApiResponse>('/auth/login', { email, password }, { withCredentials: true })
+  const resp = await apiClient.post('/auth/login', { email, password }, { withCredentials: true })
   if (!resp.data || !resp.data.success) throw new Error(resp.data?.message || 'Login failed')
-  return resp.data.data // expect { user }
+  return resp.data.data
 }
 
-export const refresh = async () => {
-  const resp = await apiClient.post<ApiResponse>('/auth/refresh', {}, { withCredentials: true })
+export const refresh = async (): Promise<any> => {
+  const resp = await apiClient.post('/auth/refresh', {}, { withCredentials: true })
   if (!resp.data || !resp.data.success) throw new Error(resp.data?.message || 'Refresh failed')
-  return resp.data.data // expect { user }
+  return resp.data.data
 }
 
 export const logout = async (): Promise<void> => {

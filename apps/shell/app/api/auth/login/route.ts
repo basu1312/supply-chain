@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { users } from '../mock/db'
+import cookie from 'cookie'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret'
 const ACCESS_TOKEN_EXPIRES_IN = '15m'
@@ -19,8 +20,17 @@ export async function POST(req: Request) {
     const accessToken = jwt.sign({ sub: user.id, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN })
     const refreshToken = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES_IN })
 
-    const res = NextResponse.json({ success: true, data: { accessToken }, message: 'Logged in' })
-    // Set refresh token as HttpOnly cookie
+    // Set both access and refresh tokens as HttpOnly cookies
+    const res = NextResponse.json({ success: true, data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } }, message: 'Logged in' })
+
+    res.cookies.set('sc_access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 15 // 15 minutes
+    })
+
     res.cookies.set('sc_refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

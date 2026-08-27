@@ -10,12 +10,11 @@ export default function Protected({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // If not authenticated, try refresh. If still not authenticated, redirect to login.
-    if (!auth.accessToken && !auth.loading) {
+    if (!auth.user && !auth.loading) {
       tryRefresh().then((r: any) => {
-        const stateAfter = (r && r.meta) ? true : false
-        // If refresh did not populate token, redirect
+        // after refresh, if still no user, redirect
         setTimeout(() => {
-          if (!localStorage.getItem('sc_access_token')) {
+          if (!auth.user) {
             router.push('/login')
           }
         }, 200)
@@ -25,11 +24,11 @@ export default function Protected({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  if (auth.loading && !auth.accessToken) {
+  if (auth.loading && !auth.user) {
     return <div className="p-6">Loading...</div>
   }
 
-  if (!auth.accessToken) {
+  if (!auth.user) {
     return <div className="p-6">Redirecting to login...</div>
   }
 

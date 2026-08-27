@@ -15,7 +15,16 @@ export async function POST(req: Request) {
       const user = users.find(u => u.id === Number(payload.sub))
       if (!user) return NextResponse.json({ success: false, message: 'User not found' }, { status: 401 })
       const accessToken = jwt.sign({ sub: user.id, name: user.name, role: user.role }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES_IN })
-      return NextResponse.json({ success: true, data: { accessToken } })
+
+      const res = NextResponse.json({ success: true, data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } } })
+      res.cookies.set('sc_access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 15
+      })
+      return res
     } catch (e) {
       return NextResponse.json({ success: false, message: 'Invalid refresh token' }, { status: 401 })
     }

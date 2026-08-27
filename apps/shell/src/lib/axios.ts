@@ -1,28 +1,25 @@
 import axios, { AxiosError } from 'axios'
-import { getAccessToken, setAccessToken, clearAccessToken } from './tokenService'
 import { store } from '../store'
-import { authSetToken } from '../store/slices/authSlice'
+import { authSetUser } from '../store/slices/authSlice'
 
 const apiClient = axios.create({
   baseURL: '/api',
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 15000
+  timeout: 15000,
+  withCredentials: true
 })
 
 let isRefreshing = false
-let refreshCall: Promise<string | null> | null = null
+let refreshCall: Promise<boolean> | null = null
 let failedQueue: Array<{ resolve: (value?: any) => void; reject: (err: any) => void; config: any }> = []
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: any, ok = false) => {
   failedQueue.forEach(p => {
     if (error) {
       p.reject(error)
     } else {
-      if (token) {
-        p.config.headers['Authorization'] = `Bearer ${token}`
-      }
       p.resolve(apiClient(p.config))
     }
   })
@@ -31,10 +28,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 apiClient.interceptors.request.use(
   config => {
-    const token = getAccessToken()
-    if (token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`
-    }
+    // cookies are sent automatically via withCredentials
     return config
   },
   error => Promise.reject(error)
@@ -58,30 +52,28 @@ apiClient.interceptors.response.use(
       refreshCall = (async () => {
         try {
           const response = await axios.post('/api/auth/refresh', {}, { withCredentials: true })
-          const { accessToken } = response.data || {}
-          if (accessToken) {
-            setAccessToken(accessToken)
-            // notify redux store about new token so UI auth state is in sync
-            try { store.dispatch(authSetToken({ accessToken })) } catch (e) { /* ignore */ }
-            processQueue(null, accessToken)
-            return accessToken
+          if (response.data && response.data.success) {
+            // If refresh returned user info, update redux
+            const user = response.data.data?.user
+            if (user) {
+              try { store.dispatch(authSetUser(user)) } catch (e) { /* ignore */ }
+            }
+            processQueue(null, true)
+            return true
           }
           processQueue(new Error('Refresh failed'))
-          return null
+          return false
         } catch (refreshError) {
-          processQueue(refreshError, null)
-          clearAccessToken()
-          try { store.dispatch(authSetToken({ accessToken: '' })) } catch (e) { /* ignore */ }
-          return null
+          processQueue(refreshError, false)
+          return false
         } finally {
           isRefreshing = false
           refreshCall = null
         }
       })()
 
-      const newToken = await refreshCall
-      if (newToken) {
-        originalConfig.headers['Authorization'] = `Bearer ${newToken}`
+      const ok = await refreshCall
+      if (ok) {
         return apiClient(originalConfig)
       }
     }
