@@ -16,7 +16,10 @@ function parseJwt(token: string | null): User | null {
     const parts = token.split('.')
     if (parts.length !== 3) return null
     const payload = parts[1]
-    const json = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'))
+    // base64url -> base64
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const json = JSON.parse(decodeURIComponent(escape(typeof window !== 'undefined' ? atob(padded) : Buffer.from(padded, 'base64').toString('binary'))))
     return { id: Number(json.sub), name: json.name, email: '', role: json.role }
   } catch (e) {
     return null
@@ -40,7 +43,15 @@ export const logout = createAsyncThunk('auth/logout', async () => {
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-  reducers: {},
+  reducers: {
+    // action used by axios interceptor when refresh obtains a new token
+    authSetToken(state, action: PayloadAction<{ accessToken: string }>) {
+      const token = action.payload.accessToken
+      setAccessToken(token)
+      state.accessToken = token
+      state.user = parseJwt(token)
+    }
+  },
   extraReducers: builder => {
     builder
       .addCase(login.pending, state => {
@@ -73,4 +84,5 @@ const authSlice = createSlice({
   }
 })
 
+export const { authSetToken } = authSlice.actions
 export default authSlice.reducer

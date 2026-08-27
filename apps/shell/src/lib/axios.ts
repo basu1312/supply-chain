@@ -1,5 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import { getAccessToken, setAccessToken, clearAccessToken } from './tokenService'
+import { store } from '../store'
+import { authSetToken } from '../store/slices/authSlice'
 
 const apiClient = axios.create({
   baseURL: '/api',
@@ -59,6 +61,8 @@ apiClient.interceptors.response.use(
           const { accessToken } = response.data || {}
           if (accessToken) {
             setAccessToken(accessToken)
+            // notify redux store about new token so UI auth state is in sync
+            try { store.dispatch(authSetToken({ accessToken })) } catch (e) { /* ignore */ }
             processQueue(null, accessToken)
             return accessToken
           }
@@ -67,6 +71,7 @@ apiClient.interceptors.response.use(
         } catch (refreshError) {
           processQueue(refreshError, null)
           clearAccessToken()
+          try { store.dispatch(authSetToken({ accessToken: '' })) } catch (e) { /* ignore */ }
           return null
         } finally {
           isRefreshing = false
