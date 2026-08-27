@@ -2,19 +2,13 @@
 
 import React from 'react'
 import { useAuth } from '../../src/hooks/useAuth'
+import { hasPermission } from '../../src/lib/permissions'
 
 export default function Can({ permission, children, fallback = null }: { permission: string; children: React.ReactNode; fallback?: React.ReactNode }) {
   const { auth } = useAuth()
-  const role = auth.user?.role
+  const role = auth.user?.role as any
 
-  // Simple permission mapping for Phase 4: expand in Phase 5 to a full permission map
-  const allowed = (() => {
-    if (!role) return false
-    if (permission.startsWith('VIEW')) return true
-    if (permission.startsWith('CREATE') || permission.startsWith('UPDATE')) return role === 'ADMIN' || role === 'MANAGER'
-    if (permission.startsWith('DELETE')) return role === 'ADMIN'
-    return false
-  })()
+  const allowed = hasPermission(role, permission as any)
 
   return <>{allowed ? children : fallback}</>
 }

@@ -1,5 +1,17 @@
 export type Role = "ADMIN" | "MANAGER" | "VIEWER";
 
+export type Permission =
+  | "VIEW_DASHBOARD"
+  | "VIEW_SHIPMENT"
+  | "CREATE_SHIPMENT"
+  | "UPDATE_SHIPMENT"
+  | "DELETE_SHIPMENT"
+  | "VIEW_INVENTORY"
+  | "UPDATE_INVENTORY"
+  | "VIEW_ORDER"
+  | "CREATE_ORDER"
+  | "UPDATE_ORDER";
+
 export type ShipmentStatus =
   | "PENDING"
   | "IN_TRANSIT"
