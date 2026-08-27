@@ -5,8 +5,12 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:shell": "cd apps/shell && next dev",
-    "build:shell": "cd apps/shell && next build",
-    "start:shell": "cd apps/shell && next start"
+    "dev:shell": "cd apps/shell && pnpm dev",
+    "dev:dashboard": "cd apps/dashboard-mfe && pnpm dev",
+    "dev:shipment": "cd apps/shipment-mfe && pnpm dev",
+    "dev:inventory": "cd apps/inventory-mfe && pnpm dev",
+    "dev:order": "cd apps/order-mfe && pnpm dev",
+    "build:shell": "cd apps/shell && pnpm build",
+    "start:shell": "cd apps/shell && pnpm start"
   }
 }
