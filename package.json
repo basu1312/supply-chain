@@ -1,0 +1,12 @@
+{
+  "name": "supply-chain",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:shell": "cd apps/shell && next dev",
+    "build:shell": "cd apps/shell && next build",
+    "start:shell": "cd apps/shell && next start"
+  }
+}
